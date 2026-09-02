@@ -1,23 +1,59 @@
-1. Download the full.ics using this bash command.
-curl -k -L "https://www.vikingfotball.no/terminliste/subscribe" -o full.ics
+# Viking home matches calendar
 
-2. Install prerequisites: - macOS/Linux: Already installed (bash, curl). - Windows: Install Git (includes Git Bash) or enable WSL.
+This repository creates a read-only calendar feed containing upcoming Viking home matches. GitHub Actions downloads the public Viking calendar once per day, filters it, and publishes the result through GitHub Pages.
 
-3. Create the script file: - Open a text editor (Notepad, VS Code, nano, etc.).
+## Subscribe
 
-4. Save file as viking_home_ics.sh
-Copy the script content: - Paste the full script into the file. - Save and close the file.
+After GitHub Pages has been enabled, subscribe to this URL in Apple Calendar, Google Calendar, Outlook, or another iCalendar-compatible application:
 
-5. Open terminal: - macOS: Terminal app. - Linux: Terminal. - Windows: Git Bash or WSL.
+```text
+https://OWNER.github.io/REPOSITORY/viking_home_matches.ics
+```
 
-6. Navigate to script folder: - Use: cd path/to/your/script
+Replace `OWNER` and `REPOSITORY` with the GitHub account and repository name. Use the calendar application's **subscribe** or **add calendar from URL** option, not its one-time import option.
 
-7. Make script executable (macOS/Linux): - chmod +x viking_home_ics.sh
+## Setup
 
-8. Run the script: - ./viking_home_ics.sh OR - bash viking_home_ics.sh
+1. Make this repository public. Calendar applications must be able to access the published feed without GitHub authentication.
+2. In the repository, open **Settings > Pages** and set the source to **GitHub Actions**.
+3. Open **Actions > Publish calendar feed**, choose **Run workflow**, and run it once.
+4. Subscribe using the URL above.
 
-9. Verify output: - A file named viking_home_matches.ics should be created.
+The scheduled workflow runs daily at approximately 05:17 UTC. GitHub may delay scheduled workflows, so the update time is not exact. You can run it manually whenever an immediate refresh is needed.
 
-10. Import into calendar: - Open Outlook, Google Calendar, or Apple Calendar. - Import the .ics file.
+## Filtering rules
 
-11. Optional automation: - Set up cron (macOS/Linux) or Task Scheduler (Windows) to run periodically
+- The event summary must begin with `Viking - `, matching the original script.
+- Only events whose start time has not passed are included.
+- Events with `STATUS:CANCELLED` or `STATUS:POSTPONED` are excluded.
+- Calendar metadata, time zones, event properties, and UIDs are preserved so calendar applications can recognize updates.
+
+## Manual testing
+
+From the repository directory, install the dependency, download the source feed, and generate a local output file:
+
+```bash
+python3 -m pip install -r requirements.txt
+curl --fail --location --retry 3 -o full.ics "https://www.vikingfotball.no/terminliste/subscribe"
+python3 filter_ics.py full.ics viking_home_matches.ics
+```
+
+Check that the output exists and contains a valid calendar:
+
+```bash
+grep -c "BEGIN:VEVENT" viking_home_matches.ics
+grep "SUMMARY:" viking_home_matches.ics
+grep "STATUS:" viking_home_matches.ics
+```
+
+You should see only upcoming summaries beginning with `Viking - `, with no cancelled or postponed events. Open `viking_home_matches.ics` in a text editor to inspect the event dates and UIDs. You can import this file for a one-time check, but use the GitHub Pages URL for automatic updates.
+
+To test the GitHub workflow, push these files to GitHub, enable Pages, then use **Actions > Publish calendar feed > Run workflow**. The published feed will be available at:
+
+```text
+https://OWNER.github.io/REPOSITORY/viking_home_matches.ics
+```
+
+## Troubleshooting
+
+If the feed is empty or a match is missing, check the source event's `SUMMARY`, `DTSTART`, and `STATUS` values. View the latest workflow run under **Actions** for download or parsing errors.
