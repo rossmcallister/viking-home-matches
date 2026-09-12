@@ -43,6 +43,8 @@ def filter_calendar(source, now=None):
             # Strip description from event
             if "DESCRIPTION" in event:
                 del event["DESCRIPTION"]
+            # Prepend emoji to title
+            event["SUMMARY"] = "⚽️🏟️ " + summary + " 🏟️⚽️"
             result.add_component(event)
     return result
 
