@@ -40,6 +40,9 @@ def filter_calendar(source, now=None):
             and status not in EXCLUDED_STATUSES
             and _start_instant(event) >= now
         ):
+            # Strip description from event
+            if "DESCRIPTION" in event:
+                del event["DESCRIPTION"]
             result.add_component(event)
     return result
 
